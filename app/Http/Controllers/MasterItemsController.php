@@ -4,9 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\MasterItem;
 use Illuminate\Http\Request;
+use App\Helpers\ItemHelper;
+use App\Models\JenisItem;
+use App\Http\Requests\ItemRequest;
 
 class MasterItemsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         return view('master_items.index.index');
@@ -14,19 +22,17 @@ class MasterItemsController extends Controller
 
     public function search(Request $request)
     {
-        $kode = $request->kode;
-        $nama = $request->nama;
-        $hargamin = $request->hargamin;
-        $hargamax = $request->hargamax;
 
-        $data_search = MasterItem::query();
-
-        if (!empty($kode)) $data_search = $data_search->where('kode', $kode);
-        if (!empty($nama)) $data_search = $data_search->where('nama', 'LIKE', '%' . $nama . '%');
-        if (!empty($hargamin)) $data_search = $data_search->where('harga_beli', '>=', $hargamin)->where('harga_beli', '<=', $hargamax);
-
-        $data_search = $data_search->select('kode', 'nama', 'jenis', 'harga_beli', 'laba', 'supplier')->orderBy('id')->get();
-
+        $data_search = MasterItem::query()->when($request->kode, function($query) use ($request) {
+            $query->where('kode', $request->kode);
+        })->when($request->nama, function($query) use ($request) {
+            $query->where('nama', 'LIKE', '%' . $request->nama . '%');
+        })->when($request->hargamin, function($query) use ($request) {
+            $query->where('harga_beli', '>=', $request->hargamin)->where('harga_beli', '<=', $request->hargamax);
+        })->leftJoin('jenis_items', 'master_items.jenis_id', '=', 'jenis_items.id')
+            ->select('master_items.kode', 'master_items.nama', 'jenis_items.name as jenis', 'master_items.harga_beli', 'master_items.laba', 'master_items.supplier')
+            ->orderBy('master_items.id')
+            ->get();
 
         return json_encode([
             'status' => 200,
@@ -36,44 +42,47 @@ class MasterItemsController extends Controller
 
     public function formView($method, $id = 0)
     {
-        if ($method == 'new') {
-            $item = [];
-        } else {
+        $item = [];
+        if ($method != 'new') {
             $item = MasterItem::find($id);
         }
+
         $data['item'] = $item;
+        $data['jenis_items'] = JenisItem::get();
         $data['method'] = $method;
         return view('master_items.form.index', $data);
     }
 
     public function singleView($kode)
     {
-        $data['data'] = MasterItem::where('kode', $kode)->first();
+        $data['data'] = MasterItem::with('jenis_item')->where('kode', $kode)->first();
         return view('master_items.single.index', $data);
     }
 
-    public function formSubmit(Request $request, $method, $id = 0)
+    public function formSubmit(ItemRequest $request, $method, $id = 0)
     {
-        if ($method == 'new') {
-            $data_item = new MasterItem;
-            $kode = MasterItem::count('id');
-            $kode = $kode + 1;
-            $kode = str_pad($kode, 5, '0', STR_PAD_LEFT);
-            sleep(3);
-        } else {
-            $data_item = MasterItem::find($id);
-            $kode = $data_item->kode;
+        $kode = ItemHelper::generateKode();
+        if ($method != 'new') {
+            $item = MasterItem::find($id);
+            if(!$item) return redirect('master-items')->withErrors(['Item not found']);
+
+            $kode = $item->kode;
         }
 
-        $data_item->nama = $request->nama;
-        $data_item->harga_beli = $request->harga_beli;
-        $data_item->laba = $request->laba;
-        $data_item->kode = $kode;
-        $data_item->supplier = $request->supplier;
-        $data_item->jenis = $request->jenis;
-        $data_item->save();
+        $path = $request->file('image')->storeAs('public/images', $kode.'.jpg');
 
-        return redirect('master-items');
+        $dataCreate = [
+            'nama' => $request->nama,
+            'harga_beli' => $request->harga_beli,
+            'laba' => $request->laba,
+            'supplier' => $request->supplier,
+            'jenis_id' => $request->jenis,
+            'image' => $path
+        ];
+
+        MasterItem::updateOrCreate(['kode' => $kode], $dataCreate);
+
+        return redirect('master-items')->with('success', 'Item saved successfully');
     }
 
     public function delete($id)

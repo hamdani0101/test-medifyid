@@ -5,14 +5,17 @@
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="form-group mb-2">
-                <a href="{{url('master-items/form/new')}}" class="btn btn-secondary">+ Master Items Baru</a>
-                <a href="{{route('kategori-items.create')}}" class="btn btn-secondary">+ Kategori Items Baru</a>
+                <a href="{{ route('kategori-items.index') }}" class="btn btn-secondary">Kembali ke Kategori Item</a>
             </div>
             <div class="card">
-                <div class="card-header">Daftar Master Items</div>
+                <div class="card-header">Edit Kategori Item</div>
 
                 <div class="card-body">
-                    @if(session('success'))
+                    <form action="{{ route('kategori-items.update', $item->id) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        @method('PUT')
+
+                        @if(session('success'))
                         <div class="alert alert-success" role="alert">
                             {{ session('success') }}
                         </div>
@@ -31,14 +34,22 @@
                             </ul>
                         </div>
                         @endif
-                    @include('master_items.index.filter')
-                    @include('master_items.index.table')
+
+                        <div class="form-group">
+                            <label>Nama</label>
+                            <input type="text" class="form-control" name="nama" required value="{{ $item->nama ?? '' }}">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Kode</label>
+                            <input type="number" class="form-control" name="kode" required value="{{ $item->kode ?? '' }}">
+                        </div>
+
+                        <button class="btn btn-primary mt-3">Update</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-@endsection
-@section('js')
-@include('master_items.index.js')
 @endsection

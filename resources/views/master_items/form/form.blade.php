@@ -1,11 +1,37 @@
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
     @csrf
+
+    @if(session('success'))
+    <div class="alert alert-success" role="alert">
+        {{ session('success') }}
+    </div>
+    @endif
+    @if(session('error'))
+    <div class="alert alert-danger" role="alert">
+        {{ session('error') }}
+    </div>
+    @endif
+    @if($errors->any())
+    <div class="alert alert-danger" role="alert">
+        <ul>
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
     @if($method == 'edit')
     <div class="form-group">
         <label>Kode Barang</label>
         <input type="text" class="form-control" name="kode_barang" required readonly value="{{$item->kode ?? ''}}">
     </div>
     @endif
+
+    <div class="form-group">
+        <label>Image</label>
+        <input type="file" class="form-control" name="image" required>
+    </div>
 
     <div class="form-group">
         <label>Nama</label>
@@ -35,16 +61,14 @@
         </select>
     </div>
 
-    @php $selected = $item->jenis ?? ''; @endphp
+    @php $selected = $item->jenis_item->id ?? ''; @endphp
     <div class="form-group">
         <label>Jenis</label>
         <select class="form-control" required name="jenis">
             <option @if($selected == '') selected @endif value="">--Pilih--</option>
-            <option @if($selected == 'Obat') selected @endif>Obat</option>
-            <option @if($selected == 'Alkes') selected @endif>Alkes</option>
-            <option @if($selected == 'Matkes') selected @endif>Matkes</option>
-            <optio @if($selected == 'Umum') selected @endif>Umum</option>
-            <optio @if($selected == 'ATK') selected @endif>ATK</option>
+            @foreach ($jenis_items as $jenis)
+                <option @if($selected == $jenis->id) selected @endif value="{{ $jenis->id }}">{{ $jenis->name }}</option>
+            @endforeach
         </select>
     </div>
 

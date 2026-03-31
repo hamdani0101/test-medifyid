@@ -40,7 +40,7 @@
                         <tr>
                             <th>Jenis</th>
                             <td>:</td>
-                            <td>{{$data->jenis}}</td>
+                            <td>{{$data->jenis_item->name}}</td>
                         </tr>
                     </table>
                     <a class="btn btn-info" href="{{url('master-items/form/edit')}}/{{$data->id}}">Edit</a>

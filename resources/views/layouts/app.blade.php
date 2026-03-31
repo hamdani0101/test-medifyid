@@ -16,6 +16,8 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+
+    <link rel="stylesheet" href="{{asset('css/bootstrap-tagsinput.css')}}">
 </head>
 
 <body>
@@ -32,7 +34,14 @@
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
-
+                        @auth
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url('master-items') }}">Master Items</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ route('kategori-items.index') }}">Kategori Items</a>
+                            </li>
+                        @endauth
                     </ul>
 
                     <!-- Right Side Of Navbar -->
